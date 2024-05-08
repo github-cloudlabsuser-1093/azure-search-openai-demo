@@ -44,31 +44,37 @@ class Document:
     reranker_score: Optional[float] = None
 
     def serialize_for_results(self) -> dict[str, Any]:
-        return {
-            "id": self.id,
-            "content": self.content,
-            "embedding": Document.trim_embedding(self.embedding),
-            "imageEmbedding": Document.trim_embedding(self.image_embedding),
-            "category": self.category,
-            "sourcepage": self.sourcepage,
-            "sourcefile": self.sourcefile,
-            "oids": self.oids,
-            "groups": self.groups,
-            "captions": (
-                [
-                    {
-                        "additional_properties": caption.additional_properties,
-                        "text": caption.text,
-                        "highlights": caption.highlights,
-                    }
-                    for caption in self.captions
-                ]
-                if self.captions
-                else []
-            ),
-            "score": self.score,
-            "reranker_score": self.reranker_score,
-        }
+            """
+            Serializes the Approach object into a dictionary format for results.
+
+            Returns:
+                A dictionary containing the serialized approach data.
+            """
+            return {
+                "id": self.id,
+                "content": self.content,
+                "embedding": Document.trim_embedding(self.embedding),
+                "imageEmbedding": Document.trim_embedding(self.image_embedding),
+                "category": self.category,
+                "sourcepage": self.sourcepage,
+                "sourcefile": self.sourcefile,
+                "oids": self.oids,
+                "groups": self.groups,
+                "captions": (
+                    [
+                        {
+                            "additional_properties": caption.additional_properties,
+                            "text": caption.text,
+                            "highlights": caption.highlights,
+                        }
+                        for caption in self.captions
+                    ]
+                    if self.captions
+                    else []
+                ),
+                "score": self.score,
+                "reranker_score": self.reranker_score,
+            }
 
     @classmethod
     def trim_embedding(cls, embedding: Optional[List[float]]) -> Optional[str]:
@@ -90,6 +96,65 @@ class ThoughtStep:
     props: Optional[dict[str, Any]] = None
 
 
+class Approach(ABC):
+    """
+    Abstract base class representing an approach for searching and retrieving documents.
+
+    Args:
+        search_client (SearchClient): The search client used for executing search queries.
+        openai_client (AsyncOpenAI): The OpenAI client used for computing embeddings.
+        auth_helper (AuthenticationHelper): The authentication helper for building security filters.
+        query_language (Optional[str]): The language used for query processing.
+        query_speller (Optional[str]): The speller used for query correction.
+        embedding_deployment (Optional[str]): The deployment name of the embedding model (not needed for non-Azure OpenAI or for retrieval_mode="text").
+        embedding_model (str): The name of the embedding model.
+        embedding_dimensions (int): The number of dimensions in the embedding vector.
+        openai_host (str): The host URL for the OpenAI service.
+        vision_endpoint (str): The endpoint URL for the Vision service.
+        vision_token_provider (Callable[[], Awaitable[str]]): A callable function that provides the Vision service token.
+
+    Attributes:
+        search_client (SearchClient): The search client used for executing search queries.
+        openai_client (AsyncOpenAI): The OpenAI client used for computing embeddings.
+        auth_helper (AuthenticationHelper): The authentication helper for building security filters.
+        query_language (Optional[str]): The language used for query processing.
+        query_speller (Optional[str]): The speller used for query correction.
+        embedding_deployment (Optional[str]): The deployment name of the embedding model (not needed for non-Azure OpenAI or for retrieval_mode="text").
+        embedding_model (str): The name of the embedding model.
+        embedding_dimensions (int): The number of dimensions in the embedding vector.
+        openai_host (str): The host URL for the OpenAI service.
+        vision_endpoint (str): The endpoint URL for the Vision service.
+        vision_token_provider (Callable[[], Awaitable[str]]): A callable function that provides the Vision service token.
+
+    """
+
+    def __init__(
+        self,
+        search_client: SearchClient,
+        openai_client: AsyncOpenAI,
+        auth_helper: AuthenticationHelper,
+        query_language: Optional[str],
+        query_speller: Optional[str],
+        embedding_deployment: Optional[str],  # Not needed for non-Azure OpenAI or for retrieval_mode="text"
+        embedding_model: str,
+        embedding_dimensions: int,
+        openai_host: str,
+        vision_endpoint: str,
+        vision_token_provider: Callable[[], Awaitable[str]],
+    ):
+        self.search_client = search_client
+        self.openai_client = openai_client
+        self.auth_helper = auth_helper
+        self.query_language = query_language
+        self.query_speller = query_speller
+        self.embedding_deployment = embedding_deployment
+        self.embedding_model = embedding_model
+        self.embedding_dimensions = embedding_dimensions
+        self.openai_host = openai_host
+        self.vision_endpoint = vision_endpoint
+        self.vision_token_provider = vision_token_provider
+
+    # Rest of the code...
 class Approach(ABC):
     def __init__(
         self,
